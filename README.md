@@ -1,5 +1,5 @@
 # 📊 Customer Churn Analysis — Machine Learning Dashboard
-[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://umairnaqvi04-churn-analytics.streamlit.app)
+[![Open in Streamlit]([https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://umairnaqvi04-churn-analytics.streamlit.app)](https://churn-analytics-ml-projec-6c87hlzf8wph69pfb8p4lq.streamlit.app/)
 
 
 
