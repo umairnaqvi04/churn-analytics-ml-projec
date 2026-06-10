@@ -1,4 +1,7 @@
 # 📊 Customer Churn Analysis — Machine Learning Dashboard
+[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://umairnaqvi04-churn-analytics.streamlit.app)
+
+
 
 > An interactive machine learning project that predicts customer churn using multiple classification algorithms and K-Means clustering, with a fully designed frontend dashboard.
 
