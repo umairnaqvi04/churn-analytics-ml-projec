@@ -536,7 +536,7 @@ else:
                       <div class="value" style="color:#10b981;">Retained</div>
                       <div class="sub">Probability: {prob[0]*100:.1f}%</div>
                     </div>""", unsafe_allow_html=True)
-                    st.success("✅ Customer retain hone ki probability zyada hai.")
+                    st.success("✅ Customer retain")
 
                 with st.expander("📋 Input Features (after encoding)"):
                     st.write(row)
