@@ -164,7 +164,7 @@ def load_and_process(df_input):
 # ── File Upload ───────────────────────────────────────────────
 with st.sidebar:
     st.markdown("### 📂 Dataset Upload")
-    uploaded_file = st.file_uploader("CSV file upload karo", type=['csv'])
+    uploaded_file = st.file_uploader("upload CSV ", type=['csv'])
     if uploaded_file:
         st.session_state['df_raw'] = pd.read_csv(uploaded_file)
         st.success(f"✅ {len(st.session_state['df_raw']):,} rows loaded")
@@ -173,7 +173,7 @@ with st.sidebar:
             st.session_state['df_raw'] = pd.read_csv("Customer-Churn-Records.csv")
             st.success("✅ Dataset loaded!")
         except:
-            st.info("👆 CSV file upload karo")
+            st.info("👆 Upload CSv")
 
     st.markdown("---")
     st.markdown("**Project Info**")
@@ -190,7 +190,7 @@ tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
 if 'df_raw' not in st.session_state:
     for tab in [tab1, tab2, tab3, tab4, tab5]:
         with tab:
-            st.info("👈 Sidebar se pehle CSV file upload karo")
+            st.info("👈 Sidebar se pehle UPload CSV")
 
 else:
     df, X, y, X_train_s, X_test_s, y_test, results = load_and_process(st.session_state['df_raw'])
