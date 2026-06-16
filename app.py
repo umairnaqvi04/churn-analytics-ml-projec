@@ -456,7 +456,7 @@ else:
         feature_cols = list(X.columns)
         categorical_cols = list(encoders.keys())
 
-        st.info("👇 Customer details enter karein, model select karein, phir **Predict Churn** dabaayein.")
+        st.info("👇 Enter Customer Data.")
 
         with st.form("churn_prediction_form"):
             c1, c2, c3 = st.columns(3)
