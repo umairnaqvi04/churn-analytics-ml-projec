@@ -125,12 +125,15 @@ st.markdown("""
 def load_and_process(df_input):
     df = df_input.copy()
     if 'Exited' not in df.columns:
-        return None, None, None, None, None, None, None
+        return None, None, None, None, None, None, None, None, None, None
+
     df = df.drop(columns=[c for c in ['RowNumber','CustomerId','Surname'] if c in df.columns])
 
+    encoders = {}
     for col in df.select_dtypes(include='object').columns:
         le = LabelEncoder()
         df[col] = le.fit_transform(df[col])
+        encoders[col] = le
 
     X = df.drop('Exited', axis=1)
     y = df['Exited']
@@ -159,7 +162,7 @@ def load_and_process(df_input):
     kmeans = KMeans(n_clusters=3, random_state=42, n_init=10)
     df['Cluster'] = kmeans.fit_predict(X)
 
-    return df, X, y, X_train_s, X_test_s, y_test, results
+    return df, X, y, X_train_s, X_test_s, y_test, results, encoders, scaler, models
 
 # ── File Upload ───────────────────────────────────────────────
 with st.sidebar:
@@ -182,18 +185,18 @@ with st.sidebar:
     st.markdown("- Developer: Syed Umair")
 
 # ── Main Content ──────────────────────────────────────────────
-tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
     "📈 Overview", "🔍 Data Analysis", "⚙️ ML Pipeline",
-    "🤖 Model Results", "👥 Clustering", "💻 Source Code"
+    "🤖 Model Results", "👥 Clustering", "💻 Source Code", "🔮 Live Prediction"
 ])
 
 if 'df_raw' not in st.session_state:
-    for tab in [tab1, tab2, tab3, tab4, tab5]:
+    for tab in [tab1, tab2, tab3, tab4, tab5, tab7]:
         with tab:
             st.info("👈 Sidebar se pehle UPload CSV")
 
 else:
-    df, X, y, X_train_s, X_test_s, y_test, results = load_and_process(st.session_state['df_raw'])
+    df, X, y, X_train_s, X_test_s, y_test, results, encoders, scaler, models = load_and_process(st.session_state['df_raw'])
 
     # ── TAB 1: Overview ───────────────────────────────────────
     with tab1:
@@ -407,6 +410,99 @@ else:
             for spine in ax.spines.values(): spine.set_edgecolor('#2d3748')
             st.pyplot(fig)
             plt.close()
+
+    # ── TAB 7: Live Prediction ────────────────────────────────
+    with tab7:
+        st.markdown('<div class="section-title">🔮 Live Customer Prediction</div>', unsafe_allow_html=True)
+
+        feature_cols = list(X.columns)
+        st.info("👇 Customer details enter karein, model select karein, phir **Predict Churn** dabaayein.")
+
+        with st.form("churn_prediction_form"):
+            c1, c2, c3 = st.columns(3)
+            input_data = {}
+
+            with c1:
+                if 'CreditScore' in feature_cols:
+                    input_data['CreditScore'] = st.number_input(
+                        'Credit Score', min_value=300, max_value=900, value=650
+                    )
+                if 'Geography' in feature_cols:
+                    geo_options = list(encoders['Geography'].classes_) if 'Geography' in encoders else ['France','Germany','Spain']
+                    input_data['Geography'] = st.selectbox('Geography', geo_options)
+                if 'Gender' in feature_cols:
+                    gender_options = list(encoders['Gender'].classes_) if 'Gender' in encoders else ['Female','Male']
+                    input_data['Gender'] = st.selectbox('Gender', gender_options)
+                if 'Age' in feature_cols:
+                    input_data['Age'] = st.number_input('Age', min_value=18, max_value=100, value=35)
+
+            with c2:
+                if 'Tenure' in feature_cols:
+                    input_data['Tenure'] = st.number_input('Tenure (years)', min_value=0, max_value=10, value=5)
+                if 'Balance' in feature_cols:
+                    input_data['Balance'] = st.number_input(
+                        'Balance', min_value=0.0, max_value=300000.0, value=50000.0, step=1000.0
+                    )
+                if 'NumOfProducts' in feature_cols:
+                    input_data['NumOfProducts'] = st.selectbox('Number of Products', [1, 2, 3, 4], index=0)
+
+            with c3:
+                if 'HasCrCard' in feature_cols:
+                    input_data['HasCrCard'] = 1 if st.checkbox('Has Credit Card', value=True) else 0
+                if 'IsActiveMember' in feature_cols:
+                    input_data['IsActiveMember'] = 1 if st.checkbox('Is Active Member', value=True) else 0
+                if 'EstimatedSalary' in feature_cols:
+                    input_data['EstimatedSalary'] = st.number_input(
+                        'Estimated Salary', min_value=0.0, max_value=300000.0, value=100000.0, step=1000.0
+                    )
+                if 'Complain' in feature_cols:
+                    input_data['Complain'] = 1 if st.checkbox('Has Complaint', value=False) else 0
+
+            model_name = st.selectbox('Select Model', list(results.keys()), index=1)
+
+            submitted = st.form_submit_button('🔮 Predict Churn')
+
+        if submitted:
+            # Missing features default to 0
+            for col in feature_cols:
+                if col not in input_data:
+                    input_data[col] = 0
+
+            row = pd.DataFrame([input_data])
+
+            # Apply same LabelEncoders used during training
+            for col, le in encoders.items():
+                if col in row.columns:
+                    row[col] = le.transform(row[col].astype(str))
+
+            # Ensure column order matches training
+            row = row[feature_cols]
+
+            # Scale and predict
+            row_scaled = scaler.transform(row)
+            selected_model = models[model_name]
+            pred = selected_model.predict(row_scaled)[0]
+            prob = selected_model.predict_proba(row_scaled)[0]
+
+            if pred == 1:
+                st.markdown(f"""
+                <div class="metric-box" style="border:1px solid #7f1d1d;">
+                  <div class="label">Prediction</div>
+                  <div class="value" style="color:#f87171;">Churned</div>
+                  <div class="sub red">Probability: {prob[1]*100:.1f}%</div>
+                </div>""", unsafe_allow_html=True)
+                st.error("⚠️ Is customer ka churn hone ka khatra hai — immediate action recommended!")
+            else:
+                st.markdown(f"""
+                <div class="metric-box" style="border:1px solid #065f46;">
+                  <div class="label">Prediction</div>
+                  <div class="value" style="color:#10b981;">Retained</div>
+                  <div class="sub">Probability: {prob[0]*100:.1f}%</div>
+                </div>""", unsafe_allow_html=True)
+                st.success("✅ Customer retain hone ki probability zyada hai.")
+
+            with st.expander("📋 Input Features (after encoding)"):
+                st.write(row)
 
 # ── TAB 6: Source Code ────────────────────────────────────────
 with tab6:
